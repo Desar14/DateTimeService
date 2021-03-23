@@ -149,7 +149,7 @@ namespace DateTimeService.Controllers
         [Authorize(Roles = UserRoles.AvailableDate + "," + UserRoles.Admin)]
         [Route("AvailableDate")]
         [HttpPost]
-        public ObjectResult AvailableDate(RequestDataAvailableDate data)
+        public IActionResult AvailableDate(RequestDataAvailableDate data)
         {
 
             string connString = _configuration.GetConnectionString("1CDataSqlConnection");
@@ -912,8 +912,8 @@ DROP TABLE #Temp_Intervals
                 var resEl = new ResponseAvailableDateDictElement
                 {
                     code = result.code[i],
-                    courier = result.courier[i],
-                    self = result.self[i]
+                    courier = result.courier[i].ToString("yyyy-MM-dd"),
+                    self = result.self[i].ToString("yyyy-MM-dd")
                 };
 
                 resultDict.data.Add(result.code[i],resEl);
@@ -924,7 +924,10 @@ DROP TABLE #Temp_Intervals
 
             _logger.LogInformation(logstringElement);
 
-            var test = JsonSerializer.Serialize(resultDict);
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.Converters.Add(new CustomDateTimeConverter());
+
+            var test = JsonSerializer.Serialize(resultDict,options);
 
             return Ok(resultDict);
         }
