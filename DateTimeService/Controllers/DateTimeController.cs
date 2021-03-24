@@ -22,6 +22,7 @@ namespace DateTimeService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Produces("application/json")]
     public class DateTimeController : ControllerBase
     {
         private readonly ILogger<DateTimeController> _logger;
@@ -111,9 +112,11 @@ namespace DateTimeService.Controllers
                 {
                     while (dr.Read())
                     {
-                        var resultItem = new ResponseMaxAvailableCount();
-                        resultItem.Nomenclature_id = dr.GetString(0);
-                        resultItem.Max_available_count = dr.GetDecimal(1);
+                        var resultItem = new ResponseMaxAvailableCount
+                        {
+                            Nomenclature_id = dr.GetString(0),
+                            Max_available_count = dr.GetDecimal(1)
+                        };
 
                         result.Add(resultItem);
                     }
@@ -146,9 +149,29 @@ namespace DateTimeService.Controllers
             return Ok(result.ToArray());
         }
 
+        /// <summary>
+        /// Возвращает ближайшие даты возможной доставки или самовывоза для переданного списка артикулов
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     POST api/DateTime/AvailableDate
+        ///     {
+        ///       "city_id": "17030",
+        ///       "codes": [
+        ///         "358649","424941","1020938"
+        ///       ]
+        ///     }
+        ///
+        /// </remarks>
+        /// <returns>Список артикулов с датами доставки и самовывоза</returns>
+        /// <response code="200">Успешное получение</response>
+        /// <response code="500">Ошибка соединения с БД</response>
         [Authorize(Roles = UserRoles.AvailableDate + "," + UserRoles.Admin)]
         [Route("AvailableDate")]
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult AvailableDate(RequestDataAvailableDate data)
         {
 
@@ -923,11 +946,6 @@ DROP TABLE #Temp_Intervals
             var logstringElement = JsonSerializer.Serialize(logElement);
 
             _logger.LogInformation(logstringElement);
-
-            JsonSerializerOptions options = new JsonSerializerOptions();
-            options.Converters.Add(new CustomDateTimeConverter());
-
-            var test = JsonSerializer.Serialize(resultDict,options);
 
             return Ok(resultDict);
         }
